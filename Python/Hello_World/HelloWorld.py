@@ -1,7 +1,12 @@
+from sys import meta_path
+from bs4 import BeautifulSoup as bs
+import polars as plrs 
 import numpy as np 
 from matplotlib import pyplot as plt
+from sklearn import decomposition as PCA
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA 
 
-print('hello world')
+('hello world')
 j = 12
 def randomArray(n):
     arr = np.array([])
