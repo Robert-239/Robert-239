@@ -23,7 +23,7 @@ W = np.cumsum(dW)
 # Simulate stock price path
 
 St = S0 * np.exp((mu - 0.5 * sigma**2) * np.linspace(0,T,N) + sigma*W)
-
+print(St)
 # estimated stock price at the end of the period
 
 S_T = St[-1]
