@@ -17,7 +17,14 @@ key_secret = 'BdAy8LI5W9jYCk_w_eORMO7bGUVLvXlsCaigVmDDAqg'
 url = 'https://api.luno.com/api/'
 stream_url = 'wss://ws.luno.com/api/1/stream/'
 PAIR = 'XBTZAR'
-
+#Interval constants
+HOUR_24 = 86400
+HOUR_8 = 28800
+HOUR_4 = 14400
+HOUR_1 = 3600
+MIN_30 = 1800
+MIN_15 = 900
+MIN_1  = 60
 
 c = Client(api_key_id= key_id,api_key_secret= key_secret)
 try:
@@ -26,7 +33,7 @@ try:
 except Exception as e :
     print(e)
 
-def get_historical_price_data():
+def get_historical_price_data(interval,start_date):
 
     '''
     The function takes the output of the exchange API for the price data that is saved as a string in a file. The file is parsed 
@@ -37,7 +44,7 @@ def get_historical_price_data():
         
         try:
             f.writelines(
-                   str(c.get_candles(300,PAIR,1601372760520))
+                   str(c.get_candles(interval,PAIR,start_date))
             )
         except Exception as e :
             print(e)
@@ -62,7 +69,6 @@ def proc_data(file)->list[str]:
     Header = tempStr.strip('{').split(',')
     print(Header)
     tempStr = ' '
- 
     while ch != ']':
         ch = f.read(1)
         if ch == '{':
@@ -76,7 +82,22 @@ def proc_data(file)->list[str]:
         tempStr = ''
     f.close
     return candle_data
+import datetime
+import time
 
+def normal_date_to_utc_epoch(normal_date):
+    # Convert normal date string to datetime object
+    dt_obj = datetime.datetime.strptime(normal_date, '%Y-%m-%d %H:%M:%S')
+    
+    # Convert datetime object to UTC timestamp
+    utc_timestamp = int(dt_obj.replace(tzinfo=datetime.timezone.utc).timestamp())
+    
+    return utc_timestamp
+
+# Example usage:
+normal_date = '2024-04-10 22:41:00'
+utc_epoch = normal_date_to_utc_epoch(normal_date)
+print("UTC Epoch:", utc_epoch)
 
 print(dt.datetime.fromtimestamp(float(1711471753513/1000)).strftime('%Y-%m-%d %H-%M-%S'))
 def parse_strings_to_dataframe(s):
@@ -157,24 +178,36 @@ def parse_stream(stream_res):
     return stream_df
     
 
+start_date = normal_date_to_utc_epoch('2023-01-01 00:00:00') * 1000
+print(start_date)
+#1672610400
 
-get_historical_price_data()
+#1601672700000
+print(dt.datetime.fromtimestamp((start_date/1000)).strftime('%Y-%m-%d %H-%M-%S'))
+get_historical_price_data(HOUR_24,start_date)
 price_data = proc_data('Historic_Price_Data.csv')
+
 formated_price_data = parse_strings_to_dataframe(price_data)
 print(formated_price_data)
+
+formated_price_data.slice(0,365).write_csv("2023_dayly_price.csv",separator=',')
+
 print(formated_price_data)
 
-while True:
-    try:
-        res = c.get_ticker(pair='XBTZAR')
-        stream_data_frame = parse_stream(res)
-
-        os.system('cls' if os.name == 'nt' else 'clear')
-        print(stream_data_frame)
-        time.sleep(0.5)
-        
-    except Exception as e :
-        print(e)
+def run():
+    old_stream_frame = pl.DataFrame()
+    while True:
+        try:
+            res = c.get_ticker(pair='XBTZAR')
+            stream_data_frame = parse_stream(res)
+            if stream_data_frame.frame_equal(old_stream_frame) != True:
+                old_stream_frame = stream_data_frame
+                os.system('cls' if os.name == 'nt' else 'clear')
+                print(stream_data_frame)
+            time.sleep(0.5)
+            
+        except Exception as e :
+            print(e)
     
 
 

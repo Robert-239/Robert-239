@@ -1,7 +1,19 @@
+from matplotlib import animation
 import polars as pl
 import json
+import time
 import backtesting
 import datetime as dt
+import pandas as pd
+from sqlalchemy import update
+from tqdm import tqdm
+from matplotlib import pyplot as plt
+from matplotlib.animation import Animation, FuncAnimation
+import matplotlib.dates
+import numpy as np
+import os
+
+
 
 PORTIFOLIO_SCHEMA = {
     'date' : pl.Time,
@@ -10,7 +22,14 @@ PORTIFOLIO_SCHEMA = {
     'asset_value' : pl.Float64,
     'portifolio_value' : pl.Float64,
 }
+portifolio = {
+    'date' : pl.Time,
+    'capital' : pl.Float64,
+    'asset' : pl.Float64,
+    'asset_value' : pl.Float64,
+    'portifolio_value' : pl.Float64,
 
+}
 TRADE_SCHEMA = {
     'date' : pl.Time,
     'price' : pl.Float64,
@@ -18,8 +37,22 @@ TRADE_SCHEMA = {
     'sell' : bool,
     'ID' : str,
 }
+trade = {
+    'date' : pl.Time,
+    'price' : pl.Float64,
+    'buy' : bool,
+    'sell' : bool,
+    'ID' : str,
 
+}
 SIGNAL_SCHEMA = {
+    'timestamp' : pl.Time,
+    'price' : pl.Float64,
+    'signal' : pl.Int8,
+    'position' : pl.Int8
+}
+
+signal = {
     'timestamp' : pl.Time,
     'price' : pl.Float64,
     'signal' : pl.Int8,
@@ -28,7 +61,7 @@ SIGNAL_SCHEMA = {
 
 CANDLE_SCHEMA = {
 
-    'timestamp': pl.Time,
+    'timestamp': str,
     'open': pl.Float64,
     'close': pl.Float64,
     'high': pl.Float64,
@@ -115,16 +148,79 @@ def init_data_frames() :
     
     return portifolio , trades ,signals 
 
+def load_data(s):
+    price_data = pl.read_csv(s,separator=',')
+    return price_data
 
 
 portifolio , trades , signals = init_data_frames()
 
+data = 'data/2023/2023_dayly_price.csv'
+
+price_data = load_data(data)
+
+print(price_data.slice(1,1))
 print(portifolio)
 print(trades)
 print(signals)
 
 
+
+def test_strategy():
+    pass
+
+def simulate_stream(price_data):
+    candles = pl.DataFrame(schema=CANDLE_SCHEMA)
+    candle_dict= {
+        'timestamp': str,
+        'open': pl.Float64,
+        'close': pl.Float64,
+        'high': pl.Float64,
+        'low': pl.Float64,
+        'volume': pl.Float64,
+    }
+    len_df = price_data.shape[0]
+     
+    price , ax = plt.subplots()
+    price.suptitle("Bitcoin price movement")
+    for i in tqdm(range(len_df),desc="Processing Historical data stream\n",leave= True):
+        if i != (len_df - 1):
+            ax.clear()
+            print('clearded')
+        candle_dict = price_data.row(i,named = True)
+        
+        candle_dict['timestamp'] = (dt.datetime.strftime((dt.datetime.strptime(candle_dict['timestamp'],"%Y-%m-%d %H-%M-%S")),"%Y-%m-%d"))
+        temp_frame = pl.DataFrame(candle_dict,schema= CANDLE_SCHEMA)
+        candles.extend(temp_frame)
+        
+        ax.set_xlabel('Closing Price')
+        ax.set_ylabel('Day')
+        ax.grid(True)
+        ax.label_outer(True)
+        ax.plot(np.asarray( candles['timestamp'],dtype='datetime64[s]'),candles['close'])
+        ax.tick_params(axis='x',labelrotation=90)
+
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print(candles)
+        temp_frame.clear()
+
+
+        plt.pause(0.1)
+        #plt.plot(data = animation,label='Closing price' )
+        if i == len_df - 1:
+            print('Last index')
+            plt.show()
+        #price_plot.show()
+        
+        time.sleep(0.1)
+    
+
+
+
 candle_list = proc_data('Historic_Price_Data.csv')
 candles = parse_strings_to_dataframe(candle_list)
+
+
+simulate_stream(price_data)
 
 

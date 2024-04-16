@@ -43,34 +43,33 @@ def moving_average_crossover_strategy(data, short_window, long_window):
 def backtest_strategy(data, signals, initial_cash=100000):
     portfolio = pl.DataFrame({'date': signals['date'],'positions':signals['positions']})
     # Buy/sell signals
-    print(portfolio.filter(pl.col('positions')==1))
 # Initialize positions with no money
     portfolio = portfolio.with_columns(
         pl.lit(initial_cash).alias('cash')
     )
-    portfolio = portfolio.with_columns(pl.lit(data['Close']).alias('Close'))
+    portfolio = portfolio.with_columns(pl.lit(data['Close']).alias('Asset_value'))
     # Buy when signal is 1, sell when signal is -1
     portfolio = portfolio.with_columns(
-        (pl.when(pl.col('positions') == 1).then(pl.col('cash') // pl.col('Close')).otherwise(0)).alias('stock')
+        (pl.when(pl.col('positions') == 1).then(pl.col('cash') // pl.col('Asset_value')).otherwise(0)).alias('stock')
     )
- 
     portfolio = portfolio.with_columns(
-        (pl.when(pl.col('positions') == 1).then(pl.col('stock') * pl.col('Close')).otherwise(0)).alias('stock_value')
+        (pl.when(pl.col('positions') == 1).then(pl.col('stock') * pl.col('Asset_value')).otherwise(0)).alias('stock_value')
     )
-
+    print(portfolio)
     portfolio = portfolio.with_columns(
-        pl.when(pl.col('positions') == 1).then(pl.col('cash') - ((pl.col('stock') * pl.col('Close')))).otherwise(
-            pl.when(pl.col('positions') == -1).then(pl.col('cash') + (pl.col('stock') * pl.col('Close'))).otherwise(pl.col('cash'))
-        ).alias('cash')
+        pl.when(pl.col('positions') == 1).then(pl.col('cash') - ((pl.col('stock') * pl.col('Asset_value')))).otherwise(
+            pl.when(pl.col('positions') == -1).then(pl.col('cash') + (pl.col('stock') * pl.col('Asset_value').shift(1))).otherwise(pl.col('cash'))
+        )
     )
+    close = portfolio.get_column('stock').to_list()
+    print(close)
+    print(portfolio.get_column('stock_value').to_list())
     print(portfolio.filter(pl.col('positions')==1))
     portfolio = portfolio.with_columns((
         pl.col('cash') + pl.col('stock_value')).alias(
         'total')
     )
-
     portfolio = portfolio.with_columns(date = pl.col('date').dt.strftime('%Y-%m-%d').alias('date'))
-
     return portfolio
 
 # Create Polars DataFrame (you can replace this with your own data loading method)
@@ -84,7 +83,7 @@ price_list = 100* np.exp(np.cumsum(returns))
 #Params for GBM price model
 
 
-np.random.seed(97)
+np.random.seed(int(dt.datetime.now().timestamp()))
 dW = np.random.normal(0, np.sqrt(d_t),N) # increments for Wt
 
 W = np.cumsum(dW)
@@ -108,7 +107,7 @@ long_window = 100
 # Run strategy
 signals = moving_average_crossover_strategy(data, short_window, long_window)
 portfolio = backtest_strategy(data, signals)
-print(portfolio)
+print(portfolio.slice(35,15))
 
 print(portfolio.filter((pl.col('positions')==1) | ( pl.col('positions') == -1)))
 # Plot
