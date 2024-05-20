@@ -1,5 +1,5 @@
 import numpy as np
-
+import matplotlib.pyplot as plt
 # dSt = mu * St * dt + sigma * St * Wt
 # Where:    St is asset price
 #           mu is drift rate
@@ -23,9 +23,14 @@ W = np.cumsum(dW)
 # Simulate stock price path
 
 St = S0 * np.exp((mu - 0.5 * sigma**2) * np.linspace(0,T,N) + sigma*W)
+
+print(St.shape)
 print(St)
 # estimated stock price at the end of the period
 
 S_T = St[-1]
+plt.title("Example of GBM")
+plt.plot(St)
+plt.show()
 
 print(f"Estimated Stock price after, {T}, year(s) : {S_T}")

@@ -178,7 +178,7 @@ def parse_stream(stream_res):
     return stream_df
     
 
-start_date = normal_date_to_utc_epoch('2023-01-01 00:00:00') * 1000
+start_date = normal_date_to_utc_epoch('2019-01-01 00:00:00') * 1000
 print(start_date)
 #1672610400
 
@@ -190,7 +190,7 @@ price_data = proc_data('Historic_Price_Data.csv')
 formated_price_data = parse_strings_to_dataframe(price_data)
 print(formated_price_data)
 
-formated_price_data.slice(0,365).write_csv("2023_dayly_price.csv",separator=',')
+formated_price_data.slice(0,365).write_csv("2019_dayly_price.csv",separator=',')
 
 print(formated_price_data)
 
