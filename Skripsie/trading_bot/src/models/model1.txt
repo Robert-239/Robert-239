@@ -1,0 +1,20 @@
+
+        model = keras.Sequential()
+        model.add(Bidirectional(LSTM(input[i], return_sequences=True), input_shape=(input[i], train_x[i].shape[-1])))
+        model.add(Dropout(rate=DROPOUT))
+        model.add(Bidirectional(LSTM(input[i] * 4, return_sequences=True)))
+        model.add(Dropout(rate=DROPOUT))
+        model.add(Bidirectional(LSTM(input[i] * 2, return_sequences=True)))
+        model.add(Dropout(rate= DROPOUT))
+        model.add(LSTM(input[i], return_sequences=False))
+        model.add(Dense(units= 7))
+        model.add(Dense(units=1))
+        model.add(Activation("linear"))
+
+        model.compile(loss='mean_squared_error', optimizer='adam', metrics=[ 'mse' ,'accuracy'])
+
+        model.fit(train_x[i],train_y[i], epochs=ephocs[j], shuffle=False, validation_split=0.2)
+        model.summary()
+        model_name = f"model_{input[i]}_with_epochs_{ephocs[j]}.keras"
+        file_name = f"model_{input[i]}_with_epochs_{ephocs[j]}.csv"
+        model.save(model_name)

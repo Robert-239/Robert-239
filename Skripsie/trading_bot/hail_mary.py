@@ -348,7 +348,7 @@ def simulate_stream(price_data, short_ma=30, long_ma=100, stop_loss=None):
 
         signals = generate_signals(candles, short_ma, long_ma)
         signal = signals.row(-1, named=True)
-        portfolio_dict, trade = trade_proc(candle_dict, portfolio_df, signal['positions'], stop_loss=stop_loss)
+        portfolio_dict, trade = trade_proc(candle_dict, portfolio_df, signal['positions'], stop_loss=0.2)
         portfolio_dict['date'] = candle_dict['timestamp']
         current_trade = pl.DataFrame(trade, TRADE_SCHEMA)
         trades.extend(current_trade)
